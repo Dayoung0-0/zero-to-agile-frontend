@@ -7,13 +7,26 @@ import { Card } from '@/components/common/Card';
 import { getLandlordListingDetail } from '@/lib/repositories/landlordRepository';
 import { Listing } from '@/types/listing';
 
-export default function LandlordListingDetailPage({ params }: { params: { id: string } }) {
+type PageProps = { params: Promise<{ id: string }> };
+
+export default function LandlordListingDetailPage({ params }: PageProps) {
   const router = useRouter();
+  const [listingId, setListingId] = useState<string | null>(null);
   const [listing, setListing] = useState<Listing | null>(null);
 
   useEffect(() => {
-    getLandlordListingDetail(params.id).then(setListing);
-  }, [params.id]);
+    let active = true;
+    Promise.resolve(params).then(({ id }) => {
+      if (!active) return;
+      setListingId(id);
+      getLandlordListingDetail(id).then((data) => {
+        if (active) setListing(data);
+      });
+    });
+    return () => {
+      active = false;
+    };
+  }, [params]);
 
   if (!listing) {
     return (
@@ -34,7 +47,12 @@ export default function LandlordListingDetailPage({ params }: { params: { id: st
           <Button variant="secondary" onClick={() => router.push('/landlord/listings')}>
             목록으로 돌아가기
           </Button>
-          <Button onClick={() => router.push(`/landlord/listings/${listing.id}/matches`)}>
+          <Button
+            onClick={() => {
+              if (!listingId) return;
+              router.push(`/landlord/listings/${listingId}/matches`);
+            }}
+          >
             매칭된 임차인 보기
           </Button>
         </div>
