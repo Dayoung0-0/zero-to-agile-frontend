@@ -40,8 +40,12 @@ export default function LandlordNewListingPage() {
 
   const toggleOption = (option: string) => {
     setForm((prev) => {
-      const exists = prev.options.includes(option);
-      return { ...prev, options: exists ? prev.options.filter((o) => o !== option) : [...prev.options, option] };
+      const currentOptions = prev.options ?? [];
+      const exists = currentOptions.includes(option);
+      return {
+        ...prev,
+        options: exists ? currentOptions.filter((o) => o !== option) : [...currentOptions, option],
+      };
     });
   };
 
