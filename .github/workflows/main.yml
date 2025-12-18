@@ -57,6 +57,10 @@ jobs:
 
       - name: Stop old container
         run: |
+          docker-compose down --remove-orphans || true
+          docker rm -f agilebang-ui || true
+          docker rm -f nginx || true
+          docker network prune -f
           docker image prune -f
           docker logout
 
