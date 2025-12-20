@@ -57,11 +57,11 @@ jobs:
 
       - name: Stop old container
         run: |
-          docker-compose down --remove-orphans || true
-          docker rm -f agilebang-ui || true
-          docker rm -f nginx || true
-          docker network prune -f
-          docker image prune -f
+          docker-compose down || true
+          docker stop agilebang-ui || true 
+          docker rm agilebang-ui || true
+          docker stop nginx || true
+          docker rm nginx || true
           docker logout
 
       - name: Run container
@@ -70,15 +70,14 @@ jobs:
           IMAGE_TAG: latest
         run: |
           docker-compose up -d
-
+      
       - name: Health check
         run: |
           sleep 5
           if curl -sSf http://localhost:80/ > /dev/null; then
-            echo "agilebang-ui is UP"
+            echo "multi-agent-ui is UP"
           else
             echo "Health check failed"
-            docker logs agilebang-ui --tail 200
+            docker logs multi-agent-ui --tail 200
             exit 1
           fi
-          
