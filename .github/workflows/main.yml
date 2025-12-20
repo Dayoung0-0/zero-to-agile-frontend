@@ -43,6 +43,12 @@ jobs:
     runs-on: [self-hosted, agilebang-ui]
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Create .env file
+        run: echo "${{ secrets.FRONTEND_ENV }}" > .env
+
       - name: GHCR Login
         run: echo ${{ secrets.GHCR_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
     
@@ -51,17 +57,24 @@ jobs:
 
       - name: Stop old container
         run: |
+          docker-compose down --remove-orphans || true
+          docker rm -f agilebang-ui || true
+          docker rm -f nginx || true
+          docker network prune -f
           docker image prune -f
           docker logout
 
       - name: Run container
+        env:
+          REPO_USER: ${{ secrets.REPO_USER }}
+          IMAGE_TAG: latest
         run: |
           docker-compose up -d
 
       - name: Health check
         run: |
           sleep 5
-          if curl -sSf http://localhost:37123/ > /dev/null; then
+          if curl -sSf http://localhost:80/ > /dev/null; then
             echo "agilebang-ui is UP"
           else
             echo "Health check failed"
