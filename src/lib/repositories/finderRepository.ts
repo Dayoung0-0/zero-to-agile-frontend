@@ -192,19 +192,19 @@ export async function deleteFinderRequest(id: number): Promise<boolean> {
  * ======================================================
  */
 
-// export async function getFinderContacts(
-//   finderId: string,
-// ): Promise<ContactRequest[]> {
-//   return getContactsByFinder(finderId);
-// }
+export async function getFinderContacts(
+  finderId: string,
+): Promise<ContactRequest[]> {
+  return getContactsByFinder(finderId);
+}
 
-// export async function updateFinderContactStatus(
-//   contactId: string,
-//   status: ContactStatus,
-// ): Promise<ContactRequest | null> {
-//   return updateContactStatus(contactId, status);
-// }
+export async function updateFinderContactStatus(
+  contactId: string,
+  status: ContactStatus,
+): Promise<ContactRequest | null> {
+  return updateContactStatus(contactId, status);
+}
 
-// export function appendFinderContact(contact: ContactRequest) {
-//   addContact(contact);
-// }
+export function appendFinderContact(contact: ContactRequest) {
+  addContact(contact);
+}
