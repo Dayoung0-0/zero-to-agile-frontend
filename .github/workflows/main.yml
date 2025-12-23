@@ -3,7 +3,7 @@ name: Deploy agilebang-ui via Docker
 on:
   push:
     branches:
-      - main
+      - main 
 
 jobs:
   build-and-push:
