@@ -241,20 +241,25 @@ export default function FinderRequestNewPage() {
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="block space-y-2">
-                  <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    최대 보증금
-                  </span>
-                  <span className="text-xs text-red-500">*</span>
-                  <input
-                    type="number"
-                    className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm shadow-sm transition focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
-                    value={form.maxDeposit || ''}
-                    onChange={(e) => setForm({ ...form, maxDeposit: Number(e.target.value) })}
-                    placeholder="100000000"
-                    required
-                  />
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      최대 보증금
+                    </span>
+                    <span className="text-xs text-red-500">*</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      className="flex-1 rounded-xl border border-slate-200 px-4 py-3 text-sm shadow-sm transition focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                      value={form.maxDeposit || ''}
+                      onChange={(e) => setForm({ ...form, maxDeposit: Number(e.target.value) })}
+                      placeholder="10000"
+                      required
+                    />
+                    <span className="text-sm font-semibold text-slate-600">만원</span>
+                  </div>
                   <p className="text-xs text-slate-500">
-                    현재: {Number(form.maxDeposit || 0).toLocaleString()} 원
+                    현재: {Number(form.maxDeposit || 0).toLocaleString()} 만원
                   </p>
                 </label>
 
@@ -263,15 +268,18 @@ export default function FinderRequestNewPage() {
                     <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                       최대 월세
                     </span>
-                    <input
-                      type="number"
-                      className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm shadow-sm transition focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
-                      value={form.maxRent || ''}
-                      onChange={(e) => setForm({ ...form, maxRent: Number(e.target.value) })}
-                      placeholder="500000"
-                    />
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        className="flex-1 rounded-xl border border-slate-200 px-4 py-3 text-sm shadow-sm transition focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                        value={form.maxRent || ''}
+                        onChange={(e) => setForm({ ...form, maxRent: Number(e.target.value) })}
+                        placeholder="50"
+                      />
+                      <span className="text-sm font-semibold text-slate-600">만원</span>
+                    </div>
                     <p className="text-xs text-slate-500">
-                      현재: {Number(form.maxRent || 0).toLocaleString()} 원
+                      현재: {Number(form.maxRent || 0).toLocaleString()} 만원
                     </p>
                   </label>
                 )}
