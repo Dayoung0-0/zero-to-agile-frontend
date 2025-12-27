@@ -190,7 +190,7 @@ export default function FinderRequestDetailPage() {
                   <p className="text-2xl font-extrabold text-slate-900">
                     {Number(request.maxDeposit ?? 0).toLocaleString()}
                     <span className="ml-1 text-base font-normal text-slate-500">
-                      원
+                      만원
                     </span>
                   </p>
                 </div>
@@ -203,7 +203,7 @@ export default function FinderRequestDetailPage() {
                     <p className="text-2xl font-extrabold text-blue-600">
                       {Number(request.maxRent ?? 0).toLocaleString()}
                       <span className="ml-1 text-base font-normal text-slate-500">
-                        원
+                        만원
                       </span>
                     </p>
                   </div>
