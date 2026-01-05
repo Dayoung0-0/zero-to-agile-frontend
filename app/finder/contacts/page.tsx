@@ -1,40 +1,32 @@
 "use client";
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/common/Button';
-// import { Card } from '@/components/common/Card';
-// import { getListingById } from '@/lib/repositories/listingRepository';
-// import {
-//   getFinderContacts,
-//   updateFinderContactStatus,
-// } from '@/lib/repositories/finderRepository';
-// import { ContactRequest } from '@/types/contact';
-// import { Listing } from '@/types/listing';
+import { getSendMessages } from '@/lib/repositories/finderRepository';
+import { SendMessageDetail } from '@/types/contact';
 
 export default function FinderContactsPage() {
-  const [contacts, setContacts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+  const [contacts, setContacts] = useState<SendMessageDetail[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  // const [listingMap, setListingMap] = useState<Record<string, Listing | null>>({});
 
-  // API 준비 전 임시 주석 처리
-  // useEffect(() => {
-  //   (async () => {
-  //     // @ts-ignore
-  //     const data = await new getFinderContacts('finder-1');
-  //     setContacts(data);
-  //     const entries = await Promise.all(
-  //       data.map(async (contact: { listingId: string; }) => [contact.listingId, await getListingById(contact.listingId)]),
-  //     );
-  //     const map = Object.fromEntries(entries) as Record<string, Listing | null>;
-  //     setListingMap(map);
-  //   })();
-  // }, []);
+  useEffect(() => {
+    const fetchContacts = async () => {
+      try {
+        setLoading(true);
+        const data = await getSendMessages();
+        setContacts(data);
+      } catch (err: any) {
+        setError(err?.message ?? '컨텍 요청 목록을 불러오는데 실패했습니다.');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  // const handleStatus = async (id: string, status: ContactRequest['status']) => {
-  //   await updateFinderContactStatus(id, status);
-  //   setContacts((prev) => prev.map((c) => (c.id === id ? { ...c, status } : c)));
-  // };
+    fetchContacts();
+  }, []);
 
   if (loading) {
     return (
@@ -83,55 +75,98 @@ export default function FinderContactsPage() {
       <div className="space-y-4">
         {contacts.map((contact) => (
           <div
-            key={contact.id}
-            className="overflow-hidden rounded-3xl bg-white shadow-xl ring-1 ring-slate-200 transition hover:shadow-2xl"
+            key={contact.sendMessageId}
+            className="overflow-hidden rounded-3xl bg-white shadow-xl ring-1 ring-slate-200 transition hover:shadow-2xl cursor-pointer"
+            onClick={() => router.push(`/finder/contacts/${contact.sendMessageId}`)}
           >
             <div className="p-6">
-              {/* 나중에 API 연결 시 사용할 코드 */}
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1 space-y-3">
+                  {/* 의뢰서 정보 */}
+                  <div className="flex items-center gap-2">
+                    <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
+                      의뢰서 #{contact.finderRequestId}
+                    </span>
+                    {contact.acceptType === 'Y' && (
+                      <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">
+                        수락함
+                      </span>
+                    )}
+                    {contact.acceptType === 'PENDING' && (
+                      <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
+                        대기중
+                      </span>
+                    )}
+                  </div>
+
+                  {/* 매물 정보 */}
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-900">
+                      {contact.houseTitle || '매물 정보'}
+                    </h3>
+                    <p className="mt-1 text-sm text-slate-600">
+                      {contact.houseAddress || '주소 정보 없음'}
+                    </p>
+                  </div>
+
+                  {/* 가격 정보 */}
+                  <div className="flex items-center gap-4 text-sm">
+                    <div className="flex items-center gap-1">
+                      <span className="font-semibold text-slate-700">보증금</span>
+                      <span className="text-slate-600">
+                        {contact.houseDeposit?.toLocaleString() || '0'}만원
+                      </span>
+                    </div>
+                    {contact.houseMonthlyRent !== undefined && contact.houseMonthlyRent > 0 && (
+                      <div className="flex items-center gap-1">
+                        <span className="font-semibold text-slate-700">월세</span>
+                        <span className="text-slate-600">
+                          {contact.houseMonthlyRent.toLocaleString()}만원
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 메시지 미리보기 */}
+                  <div className="rounded-xl bg-slate-50 p-3">
+                    <p className="text-sm text-slate-700 line-clamp-2">
+                      💬 {contact.message}
+                    </p>
+                  </div>
+
+                  {/* 작성일 */}
+                  <p className="text-xs text-slate-500">
+                    {new Date(contact.createdAt).toLocaleDateString('ko-KR', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </p>
+                </div>
+
+                {/* 화살표 아이콘 */}
+                <div className="flex-shrink-0 text-slate-400">
+                  <svg
+                    className="h-6 w-6"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5l7 7-7 7"
+                    />
+                  </svg>
+                </div>
+              </div>
             </div>
           </div>
         ))}
       </div>
     </main>
   );
-
-  // 기존 코드 (API 연결 후 사용)
-  // return (
-  //   <main className="space-y-4">
-  //     <h2 className="text-2xl font-bold">나에게 컨택한 임대인</h2>
-  //     <div className="space-y-3">
-  //       {contacts.map((contact) => {
-  //         const listing = listingMap[contact.listingId];
-  //         return (
-  //           <Card
-  //             key={contact.id}
-  //             title={listing?.title ?? `매물 ID ${contact.listingId}`}
-  //             actions={<span className="text-sm text-gray-600">상태: {contact.status}</span>}
-  //           >
-  //             <p className="text-sm text-gray-700">
-  //               임대인 닉네임: {contact.ownerId} / 제안 매물: {listing?.district ?? '미상'}
-  //             </p>
-  //             {contact.status === 'pending' ? (
-  //               <div className="mt-3 flex gap-2">
-  //                 <Button onClick={() => handleStatus(contact.id, 'accepted')}>수락</Button>
-  //                 <Button
-  //                   variant="secondary"
-  //                   onClick={() => handleStatus(contact.id, 'rejected')}
-  //                 >
-  //                   거절
-  //                 </Button>
-  //               </div>
-  //             ) : (
-  //               <p className="mt-2 text-sm text-gray-600">
-  //                 {contact.status === 'accepted'
-  //                   ? '수락되었습니다. 임대인 측에서 연락처를 확인할 수 있습니다.'
-  //                   : '거절된 요청입니다.'}
-  //               </p>
-  //             )}
-  //           </Card>
-  //         );
-  //       })}
-  //     </div>
-  //   </main>
-  // );
 }
