@@ -4,46 +4,41 @@ import { FormEvent, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/common/Button';
 import { SchoolSearchInput } from '@/components/common/SchoolSearchInput';
+import { AddressAutocompleteInput } from '@/components/common/AddressAutocompleteInput';
 import { useRole } from '@/lib/auth/roleContext';
 import {
   createFinderRequest,
 } from '@/lib/repositories/finderRepository';
-import { HouseType, PriceType } from '@/types/finder';
+import { PriceType, HouseType } from '@/types/houseOptions';
 import {
-  HOUSE_TYPE_LABEL,
-  PRICE_TYPE_LABEL,
-} from '@/types/finder.constants';
-import { DISTRICTS, DISTRICT_TO_DONG } from '@/lib/constants/districts';
+  HOUSE_TYPES,
+  PRICE_TYPES,
+} from '@/types/houseOptions';
 
 export default function FinderRequestNewPage() {
   const router = useRouter();
   const { isReady, isAuthenticated } = useRole();
 
-  const [district, setDistrict] = useState<string>('');
-  const [dong, setDong] = useState<string>('');
+  const [preferredRegion, setPreferredRegion] = useState<string>('');
 
   const [form, setForm] = useState({
-    houseType: 'APARTMENT' as HouseType,
-    priceType: 'JEONSE' as PriceType,
+    houseType: '아파트' as HouseType,
+    priceType: '전세' as PriceType,
     maxDeposit: 0,
     maxRent: 0,
-    school: '',
+    universityName: '',
+    roomcount: '',
+    bathroomcount: '',
     additionalCondition: '',
-    phoneNumber: '',
-    isNear: 'n',
-    airconYn: 'n',
-    washerYn: 'n',
-    fridgeYn: 'n',
-    useaprYear: 0,
+    isNear: false,
+    airconYn: 'N',
+    washerYn: 'N',
+    fridgeYn: 'N',
+    maxBuildingAge: 0,
   });
 
-  // 가라 데이터: 전화번호가 있는 경우 테스트하려면 '010-1234-5678' 입력, 없는 경우는 undefined
-  const [userPhone, setUserPhone] = useState<string | undefined>('010-1234-5678');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [phoneError, setPhoneError] = useState<string | null>(null);
-
-  const dongs = DISTRICT_TO_DONG[district] ?? [];
 
   useEffect(() => {
     if (!isReady) return;
@@ -51,25 +46,14 @@ export default function FinderRequestNewPage() {
       router.replace("/auth/role-select");
       return;
     }
-
-    // 가라 데이터가 있으면 form에 설정
-    if (userPhone) {
-      setForm(prev => ({ ...prev, phoneNumber: userPhone }));
-    }
-  }, [isReady, isAuthenticated, router, userPhone]);
-
-  const handleDistrictChange = (value: string) => {
-    setDistrict(value);
-    setDong(''); // 구 변경 시 동 초기화
-  };
+  }, [isReady, isAuthenticated, router]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
-    setPhoneError(null);
 
-    if (!district.trim()) {
-      setError('희망 지역(구)을 선택해주세요.');
+    if (!preferredRegion.trim()) {
+      setError('희망 지역을 입력해주세요.');
       return;
     }
 
@@ -78,40 +62,29 @@ export default function FinderRequestNewPage() {
       return;
     }
 
-    // 전화번호 필수 검증
-    if (!form.phoneNumber || form.phoneNumber.trim() === '') {
-      setPhoneError('전화번호는 필수로 작성해야 합니다.');
-      // 스크롤을 전화번호 필드로 이동
-      const phoneInput = document.getElementById('phone-number-input');
-      phoneInput?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      phoneInput?.focus();
-      return;
-    }
-
-    // 노후도 필수 검증
-    if (form.useaprYear === 0) {
+    // 건물 노후도 필수 검증
+    if (form.maxBuildingAge === 0) {
       setError('건물 노후도를 선택해주세요.');
       return;
     }
 
-    // "구 동" 형식으로 조합 (동이 없으면 구만)
-    const preferredRegion = dong ? `${district} ${dong}` : district;
-
     try {
       setLoading(true);
       await createFinderRequest({
-        preferredRegion,
+        preferredRegion: preferredRegion.trim(),
         priceType: form.priceType,
         maxDeposit: form.maxDeposit,
         maxRent: form.maxRent,
         houseType: form.houseType,
-        additionalCondition: form.additionalCondition,
-        phoneNumber: form.phoneNumber,
+        additionalCondition: form.additionalCondition || '',
+        universityName: form.universityName || '',
+        roomcount: form.roomcount || '',
+        bathroomcount: form.bathroomcount || '',
         isNear: form.isNear,
         airconYn: form.airconYn,
         washerYn: form.washerYn,
         fridgeYn: form.fridgeYn,
-        useaprYear: form.useaprYear,
+        maxBuildingAge: form.maxBuildingAge,
       });
       alert('의뢰서가 성공적으로 등록되었습니다.');
       router.push('/finder/request');
@@ -166,49 +139,12 @@ export default function FinderRequestNewPage() {
                 <span className="text-xs text-red-500">*</span>
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                {/* 구 선택 */}
-                <select
-                  className="w-full appearance-none rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm shadow-sm transition focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
-                  style={{
-                    backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
-                    backgroundPosition: 'right 0.75rem center',
-                    backgroundRepeat: 'no-repeat',
-                    backgroundSize: '1.5em 1.5em',
-                  }}
-                  value={district}
-                  onChange={(e) => handleDistrictChange(e.target.value)}
-                  required
-                >
-                  <option value="">구 선택</option>
-                  {DISTRICTS.map((d) => (
-                    <option key={d} value={d}>
-                      {d}
-                    </option>
-                  ))}
-                </select>
-
-                {/* 동 선택 */}
-                <select
-                  className="w-full appearance-none rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm shadow-sm transition focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 disabled:bg-slate-50 disabled:text-slate-400"
-                  style={{
-                    backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
-                    backgroundPosition: 'right 0.75rem center',
-                    backgroundRepeat: 'no-repeat',
-                    backgroundSize: '1.5em 1.5em',
-                  }}
-                  value={dong}
-                  onChange={(e) => setDong(e.target.value)}
-                  disabled={!district}
-                >
-                  <option value="">{dongs.length === 0 ? '구 전체' : '동 선택'}</option>
-                  {dongs.map((d) => (
-                    <option key={d} value={d}>
-                      {d}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <AddressAutocompleteInput
+                value={preferredRegion}
+                onChange={setPreferredRegion}
+                placeholder="지역을 입력하세요 (예: 서울, 마포구, 상수동)"
+                required
+              />
             </div>
 
             {/* 부동산 유형 & 임대 유형 */}
@@ -233,9 +169,9 @@ export default function FinderRequestNewPage() {
                   onChange={(e) => setForm({ ...form, houseType: e.target.value as HouseType })}
                   required
                 >
-                  {Object.entries(HOUSE_TYPE_LABEL).map(([value, label]) => (
-                    <option key={value} value={value}>
-                      {label}
+                  {HOUSE_TYPES.map((type) => (
+                    <option key={type} value={type}>
+                      {type}
                     </option>
                   ))}
                 </select>
@@ -261,16 +197,16 @@ export default function FinderRequestNewPage() {
                   onChange={(e) => setForm({ ...form, priceType: e.target.value as PriceType })}
                   required
                 >
-                  {Object.entries(PRICE_TYPE_LABEL).map(([value, label]) => (
-                    <option key={value} value={value}>
-                      {label}
+                  {PRICE_TYPES.map((type) => (
+                    <option key={type} value={type}>
+                      {type}
                     </option>
                   ))}
                 </select>
               </label>
             </div>
 
-            {/* 금액 정보 ! */}
+            {/* 금액 정보 */}
             <div className="space-y-4 border-t border-slate-100 pt-6">
               <div className="flex items-center gap-2">
                 <span className="text-base">💰</span>
@@ -301,7 +237,7 @@ export default function FinderRequestNewPage() {
                   </p>
                 </label>
 
-                {form.priceType === 'MONTHLY' && (
+                {form.priceType === '월세' && (
                   <label className="block space-y-2">
                     <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                       최대 월세
@@ -336,51 +272,8 @@ export default function FinderRequestNewPage() {
           </div>
 
           <div className="space-y-6 p-6">
-            {/* 전화번호 */}
+            {/* 학교 정보 */}
             <div className="space-y-4">
-              <label className="block space-y-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-base">📞</span>
-                  <span className="text-sm font-semibold text-slate-700">전화번호</span>
-                  <span className="text-xs text-red-500">*</span>
-                </div>
-                <input
-                  id="phone-number-input"
-                  type="tel"
-                  className={`w-full rounded-xl border px-4 py-3 text-sm shadow-sm transition focus:outline-none focus:ring-2 ${
-                    phoneError
-                      ? 'border-red-300 bg-red-50 focus:border-red-400 focus:ring-red-100'
-                      : userPhone
-                      ? 'border-slate-200 bg-slate-50 text-slate-500 cursor-not-allowed'
-                      : 'border-slate-200 focus:border-blue-400 focus:ring-blue-100'
-                  }`}
-                  value={form.phoneNumber}
-                  onChange={(e) => {
-                    if (!userPhone) {
-                      setForm({ ...form, phoneNumber: e.target.value });
-                      if (phoneError) setPhoneError(null);
-                    }
-                  }}
-                  placeholder="예: 010-1234-5678"
-                  disabled={!!userPhone}
-                  readOnly={!!userPhone}
-                />
-                {phoneError && (
-                  <p className="text-xs text-red-600 font-semibold flex items-center gap-1">
-                    <span>⚠️</span>
-                    {phoneError}
-                  </p>
-                )}
-                {userPhone && (
-                  <p className="text-xs text-slate-500">
-                    등록된 전화번호는 수정할 수 없습니다.
-                  </p>
-                )}
-              </label>
-            </div>
-
-            {/* 학교 정보 - 구분선 */}
-            <div className="space-y-4 border-t border-slate-100 pt-6">
               <div className="flex items-center gap-2">
                 <span className="text-base">🏫</span>
                 <span className="text-sm font-semibold text-slate-700">학교 정보</span>
@@ -391,9 +284,9 @@ export default function FinderRequestNewPage() {
                   학교명
                 </span>
                 <SchoolSearchInput
-                  value={form.school}
-                  onChange={(value) => setForm({ ...form, school: value })}
-                  placeholder="학교명을 검색하세요 (예: 에방대학교 )"
+                  value={form.universityName}
+                  onChange={(value) => setForm({ ...form, universityName: value })}
+                  placeholder="학교명을 검색하세요 (예: 홍익대학교)"
                   className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm shadow-sm transition focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
                 />
               </div>
@@ -403,12 +296,48 @@ export default function FinderRequestNewPage() {
                   <input
                     type="checkbox"
                     className="h-5 w-5 rounded border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-100 cursor-pointer transition"
-                    checked={form.isNear === 'y'}
-                    onChange={(e) => setForm({ ...form, isNear: e.target.checked ? 'y' : 'n' })}
+                    checked={form.isNear}
+                    onChange={(e) => setForm({ ...form, isNear: e.target.checked })}
                   />
                   <span className="text-sm text-slate-700 group-hover:text-slate-900 transition">
                     학교가 가까웠으면 좋겠어요
                   </span>
+                </label>
+              </div>
+            </div>
+
+            {/* 방 구조 정보 */}
+            <div className="space-y-4 border-t border-slate-100 pt-6">
+              <div className="flex items-center gap-2">
+                <span className="text-base">🚪</span>
+                <span className="text-sm font-semibold text-slate-700">방 구조</span>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="block space-y-2">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    방 개수
+                  </span>
+                  <input
+                    type="text"
+                    className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm shadow-sm transition focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                    value={form.roomcount}
+                    onChange={(e) => setForm({ ...form, roomcount: e.target.value })}
+                    placeholder="예: 1, 2, 3"
+                  />
+                </label>
+
+                <label className="block space-y-2">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    욕실 개수
+                  </span>
+                  <input
+                    type="text"
+                    className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm shadow-sm transition focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                    value={form.bathroomcount}
+                    onChange={(e) => setForm({ ...form, bathroomcount: e.target.value })}
+                    placeholder="예: 1, 2"
+                  />
                 </label>
               </div>
             </div>
@@ -425,8 +354,8 @@ export default function FinderRequestNewPage() {
                     <input
                       type="checkbox"
                       className="h-5 w-5 rounded border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-100 cursor-pointer transition"
-                      checked={form.airconYn === 'y'}
-                      onChange={(e) => setForm({ ...form, airconYn: e.target.checked ? 'y' : 'n' })}
+                      checked={form.airconYn === 'Y'}
+                      onChange={(e) => setForm({ ...form, airconYn: e.target.checked ? 'Y' : 'N' })}
                     />
                     <span className="text-sm text-slate-700 group-hover:text-slate-900 transition">
                       에어컨
@@ -436,8 +365,8 @@ export default function FinderRequestNewPage() {
                     <input
                       type="checkbox"
                       className="h-5 w-5 rounded border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-100 cursor-pointer transition"
-                      checked={form.washerYn === 'y'}
-                      onChange={(e) => setForm({ ...form, washerYn: e.target.checked ? 'y' : 'n' })}
+                      checked={form.washerYn === 'Y'}
+                      onChange={(e) => setForm({ ...form, washerYn: e.target.checked ? 'Y' : 'N' })}
                     />
                     <span className="text-sm text-slate-700 group-hover:text-slate-900 transition">
                       세탁기
@@ -447,8 +376,8 @@ export default function FinderRequestNewPage() {
                     <input
                       type="checkbox"
                       className="h-5 w-5 rounded border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-100 cursor-pointer transition"
-                      checked={form.fridgeYn === 'y'}
-                      onChange={(e) => setForm({ ...form, fridgeYn: e.target.checked ? 'y' : 'n' })}
+                      checked={form.fridgeYn === 'Y'}
+                      onChange={(e) => setForm({ ...form, fridgeYn: e.target.checked ? 'Y' : 'N' })}
                     />
                     <span className="text-sm text-slate-700 group-hover:text-slate-900 transition">
                       냉장고
@@ -474,16 +403,16 @@ export default function FinderRequestNewPage() {
                     backgroundRepeat: 'no-repeat',
                     backgroundSize: '1.5em 1.5em',
                   }}
-                  value={form.useaprYear}
-                  onChange={(e) => setForm({ ...form, useaprYear: Number(e.target.value) })}
+                  value={form.maxBuildingAge}
+                  onChange={(e) => setForm({ ...form, maxBuildingAge: Number(e.target.value) })}
                   required
                 >
                   <option value="0">선택해주세요</option>
                   <option value="1">5년 이하</option>
-                  <option value="2">5~9년</option>
-                  <option value="3">10~19년</option>
-                  <option value="4">20~29년</option>
-                  <option value="5">30년 이상</option>
+                  <option value="2">10년 이하</option>
+                  <option value="3">20년 이하</option>
+                  <option value="4">30년 이하</option>
+                  <option value="5">상관없음</option>
                 </select>
               </label>
             </div>

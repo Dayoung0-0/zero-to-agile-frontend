@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
-import { SCHOOLS } from '@/mocks/schools.mock';
+import { getUniversityNames } from '@/lib/repositories/finderRepository';
 
 interface SchoolSearchInputProps {
   value: string;
@@ -17,22 +17,40 @@ export function SchoolSearchInput({
   className = "",
 }: SchoolSearchInputProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [schools, setSchools] = useState<string[]>([]);
   const [filteredSchools, setFilteredSchools] = useState<string[]>([]);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const [loading, setLoading] = useState(true);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // 컴포넌트 마운트 시 대학교 목록 불러오기
+  useEffect(() => {
+    (async () => {
+      try {
+        setLoading(true);
+        const universities = await getUniversityNames();
+        setSchools(universities);
+      } catch (err) {
+        console.error('대학교 목록 조회 실패:', err);
+        setSchools([]);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
 
   // 검색어에 따라 학교 목록 필터링
   useEffect(() => {
     if (!value) {
-      setFilteredSchools(SCHOOLS);
+      setFilteredSchools(schools);
     } else {
-      const filtered = SCHOOLS.filter(school =>
+      const filtered = schools.filter(school =>
         school.toLowerCase().includes(value.toLowerCase())
       );
       setFilteredSchools(filtered);
     }
-  }, [value]);
+  }, [value, schools]);
 
   // 외부 클릭 감지
   useEffect(() => {
@@ -120,8 +138,9 @@ export function SchoolSearchInput({
         onChange={handleInputChange}
         onFocus={() => setIsOpen(true)}
         onKeyDown={handleKeyDown}
-        placeholder={placeholder}
+        placeholder={loading ? "학교 목록을 불러오는 중..." : placeholder}
         autoComplete="off"
+        disabled={loading}
       />
 
       {isOpen && filteredSchools.length > 0 && (

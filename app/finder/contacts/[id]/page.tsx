@@ -5,7 +5,6 @@ import { useRouter, useParams } from 'next/navigation';
 import { Button } from '@/components/common/Button';
 import { getSendMessageById, acceptSendMessage, rejectSendMessage } from '@/lib/repositories/finderRepository';
 import { SendMessageDetail } from '@/types/contact';
-import { PRICE_TYPE_LABEL, HOUSE_TYPE_LABEL } from '@/types/finder.constants';
 
 export default function ContactDetailPage() {
   const router = useRouter();
@@ -142,7 +141,7 @@ export default function ContactDetailPage() {
           {contact.houseType && (
             <div className="flex items-center gap-2">
               <span className="rounded-lg bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-700">
-                {HOUSE_TYPE_LABEL[contact.houseType as keyof typeof HOUSE_TYPE_LABEL] || contact.houseType}
+                {contact.houseType}
               </span>
             </div>
           )}
@@ -182,7 +181,7 @@ export default function ContactDetailPage() {
                 <div className="flex items-center gap-2">
                   <span className="font-semibold text-slate-700 w-24">임대 유형:</span>
                   <span className="text-slate-600">
-                    {PRICE_TYPE_LABEL[contact.priceType as keyof typeof PRICE_TYPE_LABEL] || contact.priceType}
+                    {contact.priceType}
                   </span>
                 </div>
               )}
